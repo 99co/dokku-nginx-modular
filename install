@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+
+OLD_PLUGIN_PATH="$PLUGIN_PATH/nginx-vhosts"
+OLD_PLUGIN_PATH_HIDDEN="$PLUGIN_PATH/.nginx-vhosts"
+
+# Rename existing nginx-vhosts plugin.
+if [[ -d $OLD_PLUGIN_PATH ]]; then
+  rm -rf $OLD_PLUGIN_PATH_HIDDEN
+  mv $OLD_PLUGIN_PATH $OLD_PLUGIN_PATH_HIDDEN
+fi
+
+# Make sure existing nginx-vhosts plugin exists
+if [[ ! -d $OLD_PLUGIN_PATH_HIDDEN ]]; then
+  echo 'ERROR: $OLD_PLUGIN_PATH_HIDDEN is required for running install.'
+fi
+
+# Use the existing nginx-vhosts install file
+source "$OLD_PLUGIN_PATH_HIDDEN/install"
+
+cat #prints output from any plugins chained to this
