@@ -12,6 +12,7 @@ echo "-----> Deploying nginx..."
 APP="$1"; PORT="$2"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" #this directory
 APP_PATH="$DOKKU_ROOT/$APP"
+APP_CONTAINER="$DOKKU_ROOT/$APP/CONTAINER"
 VHOST_PATH="$APP_PATH/VHOST"
 
 # Get list of VHOST domains. This will be overridden below if SSL for some
@@ -24,16 +25,31 @@ source $APP_PATH/ENV || true
 
 # Remove old nginx.conf if exists
 rm -f $APP_PATH/nginx.conf #need -f to supress error if non-existent file
+rm -f $APP_PATH/nginx_upstream.conf 
 
-# Add once-off configuration options.  
-echo '-----> Configuring once-off options...'
-NGINX_ONCE_CONF="$DIR/nginx.once.conf"
-APP_NGINX_ONCE_TEMPLATE="$APP_PATH/nginx.once.tpl"
-if [[ -e $APP_NGINX_ONCE_TEMPLATE ]]; then
-  echo '-----> Overriding default nginx.once.conf with detected nginx.once.tpl'
-  NGINX_ONCE_CONF=$APP_NGINX_ONCE_TEMPLATE
+PORTS=$(docker port `cat ${APP_CONTAINER}`)
+if [[ ! -z $PORTS ]]; then
+  echo "Ports"
+  echo ${PORTS[@]}
+  cat << CONF >> $APP_PATH/nginx_upstream.conf
+upstream ${APP} {
+CONF
+  for i in $(echo ${PORTS[@]} | grep -oP ":\d{5}" | grep -oP "\d{5}"); do
+    echo "Port ${i}"
+    echo "    server 127.0.0.1:${i};" >> $APP_PATH/nginx_upstream.conf
+  done
+  echo "}" >> $APP_PATH/nginx_upstream.conf
 fi
-cat $NGINX_ONCE_CONF | process_template > $APP_PATH/nginx_upstream.conf
+
+## Add once-off configuration options.  
+#echo '-----> Configuring once-off options...'
+#NGINX_ONCE_CONF="$DIR/nginx.once.conf"
+#APP_NGINX_ONCE_TEMPLATE="$APP_PATH/nginx.once.tpl"
+#if [[ -e $APP_NGINX_ONCE_TEMPLATE ]]; then
+#  echo '-----> Overriding default nginx.once.conf with detected nginx.once.tpl'
+#  NGINX_ONCE_CONF=$APP_NGINX_ONCE_TEMPLATE
+#fi
+#cat $NGINX_ONCE_CONF | process_template > $APP_PATH/nginx_upstream.conf
 
 # Now handle non-SSL domains
 NGINX_CONF="$DIR/nginx.conf" # default non-SSL conf file
