@@ -29,18 +29,18 @@ rm -f $APP_PATH/nginx_upstream.conf
 
 PORTS=$(docker port `cat ${APP_CONTAINER}`)
 if [[ ! -z $PORTS ]]; then
-  echo "Ports"
-  echo ${PORTS[@]}
+  echo -n "Ports: "
+  # echo ${PORTS[@]}
   cat << CONF >> $APP_PATH/nginx_upstream.conf
 upstream ${APP} {
 CONF
   for i in $(echo ${PORTS[@]} | grep -oP ":\d{5}" | grep -oP "\d{5}"); do
-    echo "Port ${i}"
+    echo -n ${i}
     echo "    server 127.0.0.1:${i};" >> $APP_PATH/nginx_upstream.conf
   done
   echo "}" >> $APP_PATH/nginx_upstream.conf
 fi
-
+echo ""
 ## Add once-off configuration options.  
 #echo '-----> Configuring once-off options...'
 #NGINX_ONCE_CONF="$DIR/nginx.once.conf"
