@@ -84,4 +84,4 @@ pluginhook nginx-pre-reload $APP $PORT
 echo '-----> Reloading nginx...'
 sudo /etc/init.d/nginx reload > /dev/null
 
-cat #prints output from any plugins chained to this
+# cat #prints output from any plugins chained to this
